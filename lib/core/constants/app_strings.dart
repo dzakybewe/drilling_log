@@ -54,6 +54,7 @@ class AppStrings {
   static const String btnPickImage = 'Add photo';
   static const String btnReplaceImage = 'Replace photo';
   static const String btnRemoveImage = 'Remove';
+  static const String imageFileSize = 'File size';
   static const String sheetCamera = 'Camera';
   static const String sheetGallery = 'Gallery';
   static const String sheetTitle = 'Choose image source';
