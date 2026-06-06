@@ -45,3 +45,6 @@ app.*.map.json
 /android/app/release
 
 .claude
+
+# Local reference docs and notes (not part of the app)
+/documentations/
