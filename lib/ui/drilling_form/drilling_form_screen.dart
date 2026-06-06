@@ -7,6 +7,7 @@ import '../../data/models/drilling_activity.dart';
 import '../../data/repositories/drilling_repository.dart';
 import 'viewmodels/drilling_form_viewmodel.dart';
 import 'widgets/date_field.dart';
+import 'widgets/sensor_reader_tile.dart';
 import 'widgets/status_dropdown.dart';
 
 /// Entry point for the Drilling Form screen. Provides its own ViewModel,
@@ -65,6 +66,16 @@ class _DrillingFormViewState extends State<_DrillingFormView> {
     if (picked != null) {
       viewModel.setDate(picked);
     }
+  }
+
+  /// Runs a sensor read and surfaces a SnackBar if the sensor is unavailable.
+  Future<void> _readSensor(Future<bool> Function() read) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final success = await read();
+    if (!mounted || success) return;
+    messenger.showSnackBar(
+      const SnackBar(content: Text(AppStrings.snackSensorUnavailable)),
+    );
   }
 
   /// Validates both the Form (Hole ID) and the date field.
@@ -151,6 +162,26 @@ class _DrillingFormViewState extends State<_DrillingFormView> {
                         }
                         return null;
                       },
+                    ),
+                    const SizedBox(height: AppDimens.s16),
+                    SensorReaderTile(
+                      title: AppStrings.fieldAccelerometer,
+                      icon: Icons.speed_outlined,
+                      x: viewModel.accelX,
+                      y: viewModel.accelY,
+                      z: viewModel.accelZ,
+                      isReading: viewModel.isReadingAccel,
+                      onRead: () => _readSensor(viewModel.readAccelerometer),
+                    ),
+                    const SizedBox(height: AppDimens.s16),
+                    SensorReaderTile(
+                      title: AppStrings.fieldGyroscope,
+                      icon: Icons.threesixty_outlined,
+                      x: viewModel.gyroX,
+                      y: viewModel.gyroY,
+                      z: viewModel.gyroZ,
+                      isReading: viewModel.isReadingGyro,
+                      onRead: () => _readSensor(viewModel.readGyroscope),
                     ),
                     const SizedBox(height: AppDimens.s16),
                     StatusDropdown(

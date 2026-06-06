@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/db_constants.dart';
@@ -43,7 +44,12 @@ class DrillingFormViewModel extends ChangeNotifier {
   String? _completionStatus;
 
   bool _isSaving = false;
+  bool _isReadingAccel = false;
+  bool _isReadingGyro = false;
   String? _dateError;
+
+  /// How long to wait for a single sensor sample before giving up.
+  static const Duration _sensorTimeout = Duration(seconds: 2);
 
   /// Getters
   bool get isEditing => _id != null;
@@ -58,6 +64,8 @@ class DrillingFormViewModel extends ChangeNotifier {
   String? get imagePath => _imagePath;
   String? get completionStatus => _completionStatus;
   bool get isSaving => _isSaving;
+  bool get isReadingAccel => _isReadingAccel;
+  bool get isReadingGyro => _isReadingGyro;
   String? get dateError => _dateError;
   /// End of Getters
 
@@ -74,6 +82,50 @@ class DrillingFormViewModel extends ChangeNotifier {
   void setCompletionStatus(String? value) {
     _completionStatus = value;
     notifyListeners();
+  }
+
+  /// Reads a single accelerometer sample (x, y, z in m/s²).
+  /// Returns false if the sensor is unavailable or times out.
+  Future<bool> readAccelerometer() async {
+    _isReadingAccel = true;
+    notifyListeners();
+    try {
+      final event =
+          await accelerometerEventStream().first.timeout(_sensorTimeout);
+      _accelX = event.x;
+      _accelY = event.y;
+      _accelZ = event.z;
+      return true;
+    } catch (e, st) {
+      log('readAccelerometer failed',
+          name: 'DrillingFormVM', error: e, stackTrace: st);
+      return false;
+    } finally {
+      _isReadingAccel = false;
+      notifyListeners();
+    }
+  }
+
+  /// Reads a single gyroscope sample (x, y, z in rad/s).
+  /// Returns false if the sensor is unavailable or times out.
+  Future<bool> readGyroscope() async {
+    _isReadingGyro = true;
+    notifyListeners();
+    try {
+      final event =
+          await gyroscopeEventStream().first.timeout(_sensorTimeout);
+      _gyroX = event.x;
+      _gyroY = event.y;
+      _gyroZ = event.z;
+      return true;
+    } catch (e, st) {
+      log('readGyroscope failed',
+          name: 'DrillingFormVM', error: e, stackTrace: st);
+      return false;
+    } finally {
+      _isReadingGyro = false;
+      notifyListeners();
+    }
   }
 
   /// Validates the date field (Hole ID is validated by the Form itself).
