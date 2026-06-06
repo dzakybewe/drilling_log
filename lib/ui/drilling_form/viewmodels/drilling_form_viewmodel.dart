@@ -223,8 +223,11 @@ class DrillingFormViewModel extends ChangeNotifier {
     return targetPath;
   }
 
-  /// Compresses [srcPath] under [_maxImageBytes] by lowering quality first,
-  /// then scaling down, and writes the result to the documents directory.
+  /// Compresses [srcPath] to land just under [_maxImageBytes] (≈250 KB target).
+  /// Within each resolution tier it binary-searches the JPEG quality to find
+  /// the highest quality whose output still fits, so the result lands as close
+  /// to the cap as the image allows (typically the 225-250 KB band). If even
+  /// the lowest quality is too big, it scales the resolution down and retries.
   /// Returns the saved file path, or null if compression failed.
   Future<String?> _compressAndSave(String srcPath) async {
     final dir = await getApplicationDocumentsDirectory();
@@ -235,12 +238,15 @@ class DrillingFormViewModel extends ChangeNotifier {
 
     int minWidth = 1920;
     int minHeight = 1080;
-    Uint8List? best;
+    Uint8List? smallest; // fallback if nothing ever fits under the cap
 
-    // Up to 4 resolution tiers; within each, step quality down. The first
-    // result that fits is the highest-quality fit (lands near the 250 KB cap).
     for (var tier = 0; tier < 4; tier++) {
-      for (var quality = 90; quality >= 20; quality -= 10) {
+      var lo = 10;
+      var hi = 95;
+      Uint8List? bestFit; // largest result that still fits at this resolution
+
+      while (lo <= hi) {
+        final quality = (lo + hi) ~/ 2;
         final bytes = await FlutterImageCompress.compressWithFile(
           srcPath,
           minWidth: minWidth,
@@ -248,19 +254,32 @@ class DrillingFormViewModel extends ChangeNotifier {
           quality: quality,
         );
         if (bytes == null) return null;
-        best = bytes;
+
+        if (smallest == null || bytes.length < smallest.length) {
+          smallest = bytes;
+        }
+
         if (bytes.length <= _maxImageBytes) {
-          await File(targetPath).writeAsBytes(bytes, flush: true);
-          return targetPath;
+          bestFit = bytes; // fits — try a higher quality to get closer to cap
+          lo = quality + 1;
+        } else {
+          hi = quality - 1; // too big — lower the quality
         }
       }
+
+      if (bestFit != null) {
+        await File(targetPath).writeAsBytes(bestFit, flush: true);
+        return targetPath;
+      }
+
+      // Nothing fit even at the lowest quality; shrink resolution and retry.
       minWidth = (minWidth * 0.7).round();
       minHeight = (minHeight * 0.7).round();
     }
 
-    // Could not get under the cap; persist the smallest attempt we produced.
-    if (best == null) return null;
-    await File(targetPath).writeAsBytes(best, flush: true);
+    // Could not get under the cap; persist the smallest attempt produced.
+    if (smallest == null) return null;
+    await File(targetPath).writeAsBytes(smallest, flush: true);
     return targetPath;
   }
 
