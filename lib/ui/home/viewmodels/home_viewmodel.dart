@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/foundation.dart';
 
 import '../../../core/constants/db_constants.dart';
@@ -23,11 +25,17 @@ class HomeViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    _drafts = await _repository.getByStatus(DbConstants.statusDraft);
-    _submitted = await _repository.getByStatus(DbConstants.statusSubmitted);
-
-    _isLoading = false;
-    notifyListeners();
+    try {
+      _drafts = await _repository.getByStatus(DbConstants.statusDraft);
+      _submitted = await _repository.getByStatus(DbConstants.statusSubmitted);
+    } catch (e, st) {
+      log('loadActivities failed', name: 'HomeVM', error: e, stackTrace: st);
+      _drafts = [];
+      _submitted = [];
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   /// Deletes an activity then refreshes the lists. Returns true on success.
@@ -36,7 +44,13 @@ class HomeViewModel extends ChangeNotifier {
       await _repository.delete(id);
       await loadActivities();
       return true;
-    } catch (_) {
+    } catch (e, st) {
+      log(
+        'deleteActivity($id) failed',
+        name: 'HomeVM',
+        error: e,
+        stackTrace: st,
+      );
       return false;
     }
   }
