@@ -32,6 +32,8 @@ class DrillingFormViewModel extends ChangeNotifier {
       _gyroZ = existing.gyroZ;
       _imagePath = existing.imagePath;
       _completionStatus = existing.completionStatus;
+      // Read the size of the already-saved image (edit mode).
+      _imageSizeBytes = _readSizeSync(existing.imagePath);
     }
   }
 
@@ -48,6 +50,9 @@ class DrillingFormViewModel extends ChangeNotifier {
   double? _gyroX, _gyroY, _gyroZ;
   String? _imagePath;
   String? _completionStatus;
+
+  int? _imageSizeBytes;
+  int? _imageOriginalSizeBytes;
 
   bool _isSaving = false;
   bool _isReadingAccel = false;
@@ -78,6 +83,11 @@ class DrillingFormViewModel extends ChangeNotifier {
   bool get isReadingGyro => _isReadingGyro;
   bool get isProcessingImage => _isProcessingImage;
   bool get hasImage => _imagePath != null && _imagePath!.isNotEmpty;
+  int? get imageSizeBytes => _imageSizeBytes;
+
+  /// Original (pre-compression) size of the picked image, when known.
+  /// Null in edit mode, since only the compressed file is retained.
+  int? get imageOriginalSizeBytes => _imageOriginalSizeBytes;
   String? get dateError => _dateError;
   /// End of Getters
 
@@ -150,12 +160,19 @@ class DrillingFormViewModel extends ChangeNotifier {
       final picked = await _picker.pickImage(source: source);
       if (picked == null) return true; // user cancelled — not an error
 
-      final savedPath = await _compressAndSave(picked.path);
+      final originalSize = await File(picked.path).length();
+      // Only compress when the original exceeds the cap. Re-encoding an
+      // already-small image can actually make it larger, so keep it as-is.
+      final savedPath = originalSize <= _maxImageBytes
+          ? await _copyToDocuments(picked.path)
+          : await _compressAndSave(picked.path);
       if (savedPath == null) return false;
 
       // Replace any previous image we created, then adopt the new one.
       await _deleteOwnedImage(_imagePath);
       _imagePath = savedPath;
+      _imageOriginalSizeBytes = originalSize;
+      _loadImageSize();
       return true;
     } catch (e, st) {
       log('pickImage(source: $source) failed',
@@ -171,7 +188,39 @@ class DrillingFormViewModel extends ChangeNotifier {
   Future<void> removeImage() async {
     await _deleteOwnedImage(_imagePath);
     _imagePath = null;
+    _imageSizeBytes = null;
+    _imageOriginalSizeBytes = null;
     notifyListeners();
+  }
+
+  /// Synchronously reads a file's byte size, or null if it doesn't exist.
+  int? _readSizeSync(String? path) {
+    if (path == null || path.isEmpty) return null;
+    try {
+      final file = File(path);
+      return file.existsSync() ? file.lengthSync() : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Updates the displayed size from the current image file.
+  void _loadImageSize() {
+    _imageSizeBytes = _readSizeSync(_imagePath);
+    notifyListeners();
+  }
+
+  /// Copies an already-small source image into the documents directory
+  /// without re-encoding it. Returns the saved path, or null on failure.
+  Future<String?> _copyToDocuments(String srcPath) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final ext = p.extension(srcPath).isNotEmpty ? p.extension(srcPath) : '.jpg';
+    final targetPath = p.join(
+      dir.path,
+      'drilling_${DateTime.now().millisecondsSinceEpoch}$ext',
+    );
+    await File(srcPath).copy(targetPath);
+    return targetPath;
   }
 
   /// Compresses [srcPath] under [_maxImageBytes] by lowering quality first,

@@ -232,6 +232,8 @@ class _DrillingFormViewState extends State<_DrillingFormView> {
                     const SizedBox(height: AppDimens.s16),
                     ImagePickerField(
                       imagePath: viewModel.imagePath,
+                      sizeBytes: viewModel.imageSizeBytes,
+                      originalSizeBytes: viewModel.imageOriginalSizeBytes,
                       isProcessing: viewModel.isProcessingImage,
                       onPick: () => _pickImage(viewModel),
                       onRemove: viewModel.removeImage,
