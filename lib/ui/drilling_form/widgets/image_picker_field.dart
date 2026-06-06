@@ -124,7 +124,7 @@ class _Preview extends StatelessWidget {
             File(path),
             width: double.infinity,
             height: AppDimens.imagePreviewHeight,
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
           ),
         ),
         if (sizeBytes != null) ...[
