@@ -1,6 +1,11 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 import '../../../core/constants/app_strings.dart';
@@ -31,6 +36,7 @@ class DrillingFormViewModel extends ChangeNotifier {
   }
 
   final DrillingRepository _repository;
+  final ImagePicker _picker = ImagePicker();
 
   int? _id;
   DateTime? _createdAt;
@@ -46,10 +52,14 @@ class DrillingFormViewModel extends ChangeNotifier {
   bool _isSaving = false;
   bool _isReadingAccel = false;
   bool _isReadingGyro = false;
+  bool _isProcessingImage = false;
   String? _dateError;
 
   /// How long to wait for a single sensor sample before giving up.
   static const Duration _sensorTimeout = Duration(seconds: 2);
+
+  /// Compression targets: around 225-275 KB by keeping quality as high as still fits.
+  static const int _maxImageBytes = 250 * 1024;
 
   /// Getters
   bool get isEditing => _id != null;
@@ -66,6 +76,8 @@ class DrillingFormViewModel extends ChangeNotifier {
   bool get isSaving => _isSaving;
   bool get isReadingAccel => _isReadingAccel;
   bool get isReadingGyro => _isReadingGyro;
+  bool get isProcessingImage => _isProcessingImage;
+  bool get hasImage => _imagePath != null && _imagePath!.isNotEmpty;
   String? get dateError => _dateError;
   /// End of Getters
 
@@ -125,6 +137,96 @@ class DrillingFormViewModel extends ChangeNotifier {
     } finally {
       _isReadingGyro = false;
       notifyListeners();
+    }
+  }
+
+  /// Picks an image from [source], compresses it to under 250 KB, stores it in
+  /// the app documents directory, and keeps the resulting file path.
+  /// Returns false on error; returns true if the user simply cancelled.
+  Future<bool> pickImage(ImageSource source) async {
+    _isProcessingImage = true;
+    notifyListeners();
+    try {
+      final picked = await _picker.pickImage(source: source);
+      if (picked == null) return true; // user cancelled — not an error
+
+      final savedPath = await _compressAndSave(picked.path);
+      if (savedPath == null) return false;
+
+      // Replace any previous image we created, then adopt the new one.
+      await _deleteOwnedImage(_imagePath);
+      _imagePath = savedPath;
+      return true;
+    } catch (e, st) {
+      log('pickImage(source: $source) failed',
+          name: 'DrillingFormVM', error: e, stackTrace: st);
+      return false;
+    } finally {
+      _isProcessingImage = false;
+      notifyListeners();
+    }
+  }
+
+  /// Removes the current image (and deletes the file if we own it).
+  Future<void> removeImage() async {
+    await _deleteOwnedImage(_imagePath);
+    _imagePath = null;
+    notifyListeners();
+  }
+
+  /// Compresses [srcPath] under [_maxImageBytes] by lowering quality first,
+  /// then scaling down, and writes the result to the documents directory.
+  /// Returns the saved file path, or null if compression failed.
+  Future<String?> _compressAndSave(String srcPath) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final targetPath = p.join(
+      dir.path,
+      'drilling_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
+
+    int minWidth = 1920;
+    int minHeight = 1080;
+    Uint8List? best;
+
+    // Up to 4 resolution tiers; within each, step quality down. The first
+    // result that fits is the highest-quality fit (lands near the 250 KB cap).
+    for (var tier = 0; tier < 4; tier++) {
+      for (var quality = 90; quality >= 20; quality -= 10) {
+        final bytes = await FlutterImageCompress.compressWithFile(
+          srcPath,
+          minWidth: minWidth,
+          minHeight: minHeight,
+          quality: quality,
+        );
+        if (bytes == null) return null;
+        best = bytes;
+        if (bytes.length <= _maxImageBytes) {
+          await File(targetPath).writeAsBytes(bytes, flush: true);
+          return targetPath;
+        }
+      }
+      minWidth = (minWidth * 0.7).round();
+      minHeight = (minHeight * 0.7).round();
+    }
+
+    // Could not get under the cap; persist the smallest attempt we produced.
+    if (best == null) return null;
+    await File(targetPath).writeAsBytes(best, flush: true);
+    return targetPath;
+  }
+
+  /// Deletes an image file only if it lives in our documents directory, so we
+  /// never touch the user's original gallery files.
+  Future<void> _deleteOwnedImage(String? path) async {
+    if (path == null || path.isEmpty) return;
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      if (!p.isWithin(dir.path, path)) return;
+      final file = File(path);
+      if (file.existsSync()) await file.delete();
+    } catch (e, st) {
+      log('_deleteOwnedImage failed',
+          name: 'DrillingFormVM', error: e, stackTrace: st);
     }
   }
 

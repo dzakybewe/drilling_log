@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_dimens.dart';
@@ -7,6 +8,7 @@ import '../../data/models/drilling_activity.dart';
 import '../../data/repositories/drilling_repository.dart';
 import 'viewmodels/drilling_form_viewmodel.dart';
 import 'widgets/date_field.dart';
+import 'widgets/image_picker_field.dart';
 import 'widgets/sensor_reader_tile.dart';
 import 'widgets/status_dropdown.dart';
 
@@ -66,6 +68,50 @@ class _DrillingFormViewState extends State<_DrillingFormView> {
     if (picked != null) {
       viewModel.setDate(picked);
     }
+  }
+
+  /// Shows a bottom sheet to choose the image source, then picks + compresses.
+  Future<void> _pickImage(DrillingFormViewModel viewModel) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppDimens.s16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  AppStrings.sheetTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text(AppStrings.sheetCamera),
+              onTap: () => Navigator.of(context).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text(AppStrings.sheetGallery),
+              onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+            ),
+            const SizedBox(height: AppDimens.s8),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final success = await viewModel.pickImage(source);
+    if (!mounted || success) return;
+    messenger.showSnackBar(
+      const SnackBar(content: Text(AppStrings.snackImageError)),
+    );
   }
 
   /// Runs a sensor read and surfaces a SnackBar if the sensor is unavailable.
@@ -182,6 +228,13 @@ class _DrillingFormViewState extends State<_DrillingFormView> {
                       z: viewModel.gyroZ,
                       isReading: viewModel.isReadingGyro,
                       onRead: () => _readSensor(viewModel.readGyroscope),
+                    ),
+                    const SizedBox(height: AppDimens.s16),
+                    ImagePickerField(
+                      imagePath: viewModel.imagePath,
+                      isProcessing: viewModel.isProcessingImage,
+                      onPick: () => _pickImage(viewModel),
+                      onRemove: viewModel.removeImage,
                     ),
                     const SizedBox(height: AppDimens.s16),
                     StatusDropdown(
