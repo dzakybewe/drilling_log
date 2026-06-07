@@ -5,6 +5,8 @@ import 'core/constants/app_routes.dart';
 import 'core/constants/app_strings.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/drilling_repository.dart';
+import 'data/services/image_service.dart';
+import 'data/services/sensor_service.dart';
 import 'ui/drilling_form/drilling_form_screen.dart';
 import 'ui/home/home_screen.dart';
 import 'ui/home/viewmodels/home_viewmodel.dart';
@@ -22,6 +24,12 @@ class DrillingLogApp extends StatelessWidget {
       providers: [
         Provider<DrillingRepository>(
           create: (_) => DrillingRepository(),
+        ),
+        Provider<ImageService>(
+          create: (_) => ImageService(),
+        ),
+        Provider<SensorService>(
+          create: (_) => SensorService(),
         ),
         ChangeNotifierProvider<HomeViewModel>(
           create: (context) =>

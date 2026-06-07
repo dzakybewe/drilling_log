@@ -6,6 +6,8 @@ import '../../core/constants/app_dimens.dart';
 import '../../core/constants/app_strings.dart';
 import '../../data/models/drilling_activity.dart';
 import '../../data/repositories/drilling_repository.dart';
+import '../../data/services/image_service.dart';
+import '../../data/services/sensor_service.dart';
 import 'viewmodels/drilling_form_viewmodel.dart';
 import 'widgets/date_field.dart';
 import 'widgets/image_picker_field.dart';
@@ -26,6 +28,8 @@ class DrillingFormScreen extends StatelessWidget {
       create: (context) => DrillingFormViewModel(
         context.read<DrillingRepository>(),
         existing: existing,
+        imageService: context.read<ImageService>(),
+        sensorService: context.read<SensorService>(),
       ),
       child: const _DrillingFormView(),
     );
