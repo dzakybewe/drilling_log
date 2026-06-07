@@ -9,7 +9,6 @@ import 'data/services/image_service.dart';
 import 'data/services/sensor_service.dart';
 import 'ui/drilling_form/drilling_form_screen.dart';
 import 'ui/home/home_screen.dart';
-import 'ui/home/viewmodels/home_viewmodel.dart';
 
 void main() {
   runApp(const DrillingLogApp());
@@ -30,10 +29,6 @@ class DrillingLogApp extends StatelessWidget {
         ),
         Provider<SensorService>(
           create: (_) => SensorService(),
-        ),
-        ChangeNotifierProvider<HomeViewModel>(
-          create: (context) =>
-              HomeViewModel(context.read<DrillingRepository>()),
         ),
       ],
       child: MaterialApp(

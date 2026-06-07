@@ -5,23 +5,35 @@ import '../../core/constants/app_dimens.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_strings.dart';
 import '../../data/models/drilling_activity.dart';
+import '../../data/repositories/drilling_repository.dart';
 import 'viewmodels/home_viewmodel.dart';
 import 'widgets/activity_card.dart';
 import 'widgets/empty_state.dart';
 
-/// Home screen with Offline (drafts) and Online (submitted) tabs.
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (context) => HomeViewModel(context.read<DrillingRepository>()),
+      child: const _HomeView(),
+    );
+  }
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeView extends StatefulWidget {
+  const _HomeView();
+
+  @override
+  State<_HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<_HomeView> {
   @override
   void initState() {
     super.initState();
-    // Load data after the first frame so the provider is available.
+    // Make sure provider is available.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<HomeViewModel>().loadActivities();
     });
@@ -123,7 +135,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// A pull-to-refresh list of activities, or an empty state when there are none.
 class _ActivityList extends StatelessWidget {
   const _ActivityList({
     required this.activities,
@@ -149,7 +160,6 @@ class _ActivityList extends StatelessWidget {
       onRefresh: onRefresh,
       child: activities.isEmpty
           ? ListView(
-              // Ensures the empty state is scrollable so pull-to-refresh works.
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 SizedBox(
