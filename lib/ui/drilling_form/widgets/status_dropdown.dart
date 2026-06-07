@@ -14,23 +14,22 @@ class StatusDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      initialValue: value,
-      decoration: const InputDecoration(
-        labelText: AppStrings.fieldStatus,
-      ),
-      hint: const Text(AppStrings.fieldStatusHint),
-      items: const [
-        DropdownMenuItem(
+    return DropdownMenu<String>(
+      expandedInsets: EdgeInsets.zero,
+      initialSelection: value,
+      onSelected: onChanged,
+      label: const Text(AppStrings.fieldStatus),
+      hintText: AppStrings.fieldStatusHint,
+      dropdownMenuEntries: const [
+        DropdownMenuEntry(
           value: AppStrings.statusComplete,
-          child: Text(AppStrings.statusComplete),
+          label: AppStrings.statusComplete,
         ),
-        DropdownMenuItem(
+        DropdownMenuEntry(
           value: AppStrings.statusNotComplete,
-          child: Text(AppStrings.statusNotComplete),
+          label: AppStrings.statusNotComplete,
         ),
       ],
-      onChanged: onChanged,
     );
   }
 }
