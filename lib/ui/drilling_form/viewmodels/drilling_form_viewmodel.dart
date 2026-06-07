@@ -17,8 +17,8 @@ class DrillingFormViewModel extends ChangeNotifier {
     DrillingActivity? existing,
     ImageService? imageService,
     SensorService? sensorService,
-  })  : _imageService = imageService ?? ImageService(),
-        _sensorService = sensorService ?? SensorService() {
+  }) : _imageService = imageService ?? ImageService(),
+       _sensorService = sensorService ?? SensorService() {
     if (existing != null) {
       _id = existing.id;
       _createdAt = existing.createdAt;
@@ -83,6 +83,7 @@ class DrillingFormViewModel extends ChangeNotifier {
   /// Null in edit mode, since only the compressed file is retained.
   int? get imageOriginalSizeBytes => _imageOriginalSizeBytes;
   String? get dateError => _dateError;
+
   /// End of Getters
 
   void setHoleId(String value) {
@@ -110,8 +111,12 @@ class DrillingFormViewModel extends ChangeNotifier {
       _accelZ = reading.z;
       return true;
     } catch (e, st) {
-      log('readAccelerometer failed',
-          name: 'DrillingFormVM', error: e, stackTrace: st);
+      log(
+        'readAccelerometer failed',
+        name: 'DrillingFormVM',
+        error: e,
+        stackTrace: st,
+      );
       return false;
     } finally {
       _isReadingAccel = false;
@@ -129,8 +134,12 @@ class DrillingFormViewModel extends ChangeNotifier {
       _gyroZ = reading.z;
       return true;
     } catch (e, st) {
-      log('readGyroscope failed',
-          name: 'DrillingFormVM', error: e, stackTrace: st);
+      log(
+        'readGyroscope failed',
+        name: 'DrillingFormVM',
+        error: e,
+        stackTrace: st,
+      );
       return false;
     } finally {
       _isReadingGyro = false;
@@ -152,8 +161,12 @@ class DrillingFormViewModel extends ChangeNotifier {
       _imageSizeBytes = _imageService.sizeOf(result.path);
       return true;
     } catch (e, st) {
-      log('pickImage(source: $source) failed',
-          name: 'DrillingFormVM', error: e, stackTrace: st);
+      log(
+        'pickImage(source: $source) failed',
+        name: 'DrillingFormVM',
+        error: e,
+        stackTrace: st,
+      );
       return false;
     } finally {
       _isProcessingImage = false;
@@ -203,8 +216,12 @@ class DrillingFormViewModel extends ChangeNotifier {
       }
       return true;
     } catch (e, st) {
-      log('save(status: $status) failed',
-          name: 'DrillingFormVM', error: e, stackTrace: st);
+      log(
+        'save(status: $status) failed',
+        name: 'DrillingFormVM',
+        error: e,
+        stackTrace: st,
+      );
       return false;
     } finally {
       _isSaving = false;

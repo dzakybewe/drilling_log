@@ -31,9 +31,9 @@ class StatusBadge extends StatelessWidget {
       child: Text(
         _label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colors.foreground,
-              fontWeight: FontWeight.w600,
-            ),
+          color: colors.foreground,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

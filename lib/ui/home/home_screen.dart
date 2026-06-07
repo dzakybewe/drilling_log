@@ -176,8 +176,7 @@ class _ActivityList extends StatelessWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(AppDimens.s16),
               itemCount: activities.length,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(height: AppDimens.s12),
+              separatorBuilder: (_, _) => const SizedBox(height: AppDimens.s12),
               itemBuilder: (context, index) {
                 final activity = activities[index];
                 return ActivityCard(

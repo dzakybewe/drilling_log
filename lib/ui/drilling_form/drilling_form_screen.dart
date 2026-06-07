@@ -176,10 +176,10 @@ class _DrillingFormViewState extends State<_DrillingFormView> {
             onPressed: viewModel.isSaving
                 ? null
                 : () => _handleSave(
-                      viewModel: viewModel,
-                      action: viewModel.saveAsDraft,
-                      successMessage: AppStrings.snackDraftSaved,
-                    ),
+                    viewModel: viewModel,
+                    action: viewModel.saveAsDraft,
+                    successMessage: AppStrings.snackDraftSaved,
+                  ),
           ),
         ],
       ),

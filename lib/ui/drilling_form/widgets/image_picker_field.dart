@@ -37,8 +37,11 @@ class ImagePickerField extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.photo_camera_outlined,
-                    size: 20, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.photo_camera_outlined,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(width: AppDimens.s8),
                 Text(
                   AppStrings.fieldImage,
@@ -143,8 +146,11 @@ class _Preview extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.compress,
-                      size: 16, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.compress,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: AppDimens.s4),
                   Text(
                     _sizeLabel(),

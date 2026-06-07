@@ -7,7 +7,7 @@ import '../services/database_helper.dart';
 /// Provides full CRUD access to [DrillingActivity] records in SQLite.
 class DrillingRepository {
   DrillingRepository({DatabaseHelper? databaseHelper})
-      : _databaseHelper = databaseHelper ?? DatabaseHelper.instance;
+    : _databaseHelper = databaseHelper ?? DatabaseHelper.instance;
 
   final DatabaseHelper _databaseHelper;
 

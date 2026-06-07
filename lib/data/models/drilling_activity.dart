@@ -98,7 +98,8 @@ class DrillingActivity {
     );
   }
 
-  bool get hasAccelerometer => accelX != null && accelY != null && accelZ != null;
+  bool get hasAccelerometer =>
+      accelX != null && accelY != null && accelZ != null;
 
   bool get hasGyroscope => gyroX != null && gyroY != null && gyroZ != null;
 }
