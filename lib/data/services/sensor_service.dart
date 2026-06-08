@@ -23,9 +23,10 @@ class SensorService {
     return SensorReading(x: event.x, y: event.y, z: event.z);
   }
 
-  /// Sensor streams. 
-  Stream<SensorReading> accelerometerStream() => accelerometerEventStream()
-      .map((e) => SensorReading(x: e.x, y: e.y, z: e.z));
+  /// Sensor streams.
+  Stream<SensorReading> accelerometerStream() => accelerometerEventStream().map(
+    (e) => SensorReading(x: e.x, y: e.y, z: e.z),
+  );
 
   Stream<SensorReading> gyroscopeStream() =>
       gyroscopeEventStream().map((e) => SensorReading(x: e.x, y: e.y, z: e.z));
