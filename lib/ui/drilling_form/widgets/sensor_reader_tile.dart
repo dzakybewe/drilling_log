@@ -11,8 +11,8 @@ class SensorReaderTile extends StatelessWidget {
     required this.x,
     required this.y,
     required this.z,
-    required this.isReading,
-    required this.onRead,
+    required this.isPreviewing,
+    required this.onToggle,
   });
 
   final String title;
@@ -20,8 +20,8 @@ class SensorReaderTile extends StatelessWidget {
   final double? x;
   final double? y;
   final double? z;
-  final bool isReading;
-  final VoidCallback onRead;
+  final bool isPreviewing;
+  final VoidCallback onToggle;
 
   bool get _hasReading => x != null && y != null && z != null;
 
@@ -45,22 +45,29 @@ class SensorReaderTile extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                if (isPreviewing) ...[
+                  const SizedBox(width: AppDimens.s8),
+                  _LiveBadge(),
+                ],
                 const Spacer(),
-                OutlinedButton.icon(
-                  onPressed: isReading ? null : onRead,
-                  icon: isReading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.sensors, size: 18),
-                  label: Text(
-                    _hasReading
-                        ? AppStrings.btnReadSensorAgain
-                        : AppStrings.btnReadSensor,
-                  ),
-                ),
+                isPreviewing
+                    ? FilledButton.icon(
+                        onPressed: onToggle,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(0, AppDimens.minTouchTarget),
+                        ),
+                        icon: const Icon(Icons.check, size: 18),
+                        label: const Text(AppStrings.btnCaptureSensor),
+                      )
+                    : OutlinedButton.icon(
+                        onPressed: onToggle,
+                        icon: const Icon(Icons.sensors, size: 18),
+                        label: Text(
+                          _hasReading
+                              ? AppStrings.btnReadSensorAgain
+                              : AppStrings.btnReadSensor,
+                        ),
+                      ),
               ],
             ),
             const SizedBox(height: AppDimens.s12),
@@ -84,6 +91,34 @@ class SensorReaderTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LiveBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Colors.red,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: AppDimens.s4),
+        Text(
+          AppStrings.sensorLive,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }

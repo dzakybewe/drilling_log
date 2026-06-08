@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
@@ -54,9 +55,12 @@ class DrillingFormViewModel extends ChangeNotifier {
   int? _imageSizeBytes;
   int? _imageOriginalSizeBytes;
 
+  StreamSubscription<SensorReading>? _accelSub;
+  StreamSubscription<SensorReading>? _gyroSub;
+
   bool _isSaving = false;
-  bool _isReadingAccel = false;
-  bool _isReadingGyro = false;
+  bool _isPreviewingAccel = false;
+  bool _isPreviewingGyro = false;
   bool _isProcessingImage = false;
   String? _dateError;
 
@@ -73,8 +77,8 @@ class DrillingFormViewModel extends ChangeNotifier {
   String? get imagePath => _imagePath;
   String? get completionStatus => _completionStatus;
   bool get isSaving => _isSaving;
-  bool get isReadingAccel => _isReadingAccel;
-  bool get isReadingGyro => _isReadingGyro;
+  bool get isPreviewingAccel => _isPreviewingAccel;
+  bool get isPreviewingGyro => _isPreviewingGyro;
   bool get isProcessingImage => _isProcessingImage;
   bool get hasImage => _imagePath != null && _imagePath!.isNotEmpty;
   int? get imageSizeBytes => _imageSizeBytes;
@@ -101,50 +105,69 @@ class DrillingFormViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> readAccelerometer() async {
-    _isReadingAccel = true;
-    notifyListeners();
-    try {
-      final reading = await _sensorService.readAccelerometer();
-      _accelX = reading.x;
-      _accelY = reading.y;
-      _accelZ = reading.z;
+  /// Starts the live preview (false if unavailable); a second call captures.
+  Future<bool> toggleAccelerometer() async {
+    if (_isPreviewingAccel) {
+      await _accelSub?.cancel();
+      _accelSub = null;
+      _isPreviewingAccel = false;
+      notifyListeners();
       return true;
+    }
+
+    try {
+      await _sensorService.readAccelerometer();
     } catch (e, st) {
       log(
-        'readAccelerometer failed',
+        'accelerometer unavailable',
         name: 'DrillingFormVM',
         error: e,
         stackTrace: st,
       );
       return false;
-    } finally {
-      _isReadingAccel = false;
-      notifyListeners();
     }
+
+    _isPreviewingAccel = true;
+    notifyListeners();
+    _accelSub = _sensorService.accelerometerStream().listen((r) {
+      _accelX = r.x;
+      _accelY = r.y;
+      _accelZ = r.z;
+      notifyListeners();
+    });
+    return true;
   }
 
-  Future<bool> readGyroscope() async {
-    _isReadingGyro = true;
-    notifyListeners();
-    try {
-      final reading = await _sensorService.readGyroscope();
-      _gyroX = reading.x;
-      _gyroY = reading.y;
-      _gyroZ = reading.z;
+  Future<bool> toggleGyroscope() async {
+    if (_isPreviewingGyro) {
+      await _gyroSub?.cancel();
+      _gyroSub = null;
+      _isPreviewingGyro = false;
+      notifyListeners();
       return true;
+    }
+
+    try {
+      await _sensorService.readGyroscope();
     } catch (e, st) {
       log(
-        'readGyroscope failed',
+        'gyroscope unavailable',
         name: 'DrillingFormVM',
         error: e,
         stackTrace: st,
       );
       return false;
-    } finally {
-      _isReadingGyro = false;
-      notifyListeners();
     }
+
+    _isPreviewingGyro = true;
+    notifyListeners();
+    _gyroSub = _sensorService.gyroscopeStream().listen((r) {
+      _gyroX = r.x;
+      _gyroY = r.y;
+      _gyroZ = r.z;
+      notifyListeners();
+    });
+    return true;
   }
 
   /// Returns false on error; true if saved or cancelled.
@@ -232,4 +255,11 @@ class DrillingFormViewModel extends ChangeNotifier {
   Future<bool> saveAsDraft() => save(DbConstants.statusDraft);
 
   Future<bool> submit() => save(DbConstants.statusSubmitted);
+
+  @override
+  void dispose() {
+    _accelSub?.cancel();
+    _gyroSub?.cancel();
+    super.dispose();
+  }
 }

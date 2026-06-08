@@ -14,7 +14,7 @@ import 'widgets/image_picker_field.dart';
 import 'widgets/sensor_reader_tile.dart';
 import 'widgets/status_dropdown.dart';
 
-/// Entry point for the Drilling Form screen. Provides its own ViewModel,
+/// Drilling Form screen. Provides its own ViewModel,
 /// seeded with an existing activity (edit mode) when passed via route args.
 class DrillingFormScreen extends StatelessWidget {
   const DrillingFormScreen({super.key});
@@ -74,7 +74,6 @@ class _DrillingFormViewState extends State<_DrillingFormView> {
     }
   }
 
-  /// Shows a bottom sheet to choose the image source, then picks + compresses.
   Future<void> _pickImage(DrillingFormViewModel viewModel) async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -118,10 +117,9 @@ class _DrillingFormViewState extends State<_DrillingFormView> {
     );
   }
 
-  /// Runs a sensor read and surfaces a SnackBar if the sensor is unavailable.
-  Future<void> _readSensor(Future<bool> Function() read) async {
+  Future<void> _toggleSensor(Future<bool> Function() toggle) async {
     final messenger = ScaffoldMessenger.of(context);
-    final success = await read();
+    final success = await toggle();
     if (!mounted || success) return;
     messenger.showSnackBar(
       const SnackBar(content: Text(AppStrings.snackSensorUnavailable)),
@@ -220,8 +218,9 @@ class _DrillingFormViewState extends State<_DrillingFormView> {
                       x: viewModel.accelX,
                       y: viewModel.accelY,
                       z: viewModel.accelZ,
-                      isReading: viewModel.isReadingAccel,
-                      onRead: () => _readSensor(viewModel.readAccelerometer),
+                      isPreviewing: viewModel.isPreviewingAccel,
+                      onToggle: () =>
+                          _toggleSensor(viewModel.toggleAccelerometer),
                     ),
                     const SizedBox(height: AppDimens.s16),
                     SensorReaderTile(
@@ -230,8 +229,8 @@ class _DrillingFormViewState extends State<_DrillingFormView> {
                       x: viewModel.gyroX,
                       y: viewModel.gyroY,
                       z: viewModel.gyroZ,
-                      isReading: viewModel.isReadingGyro,
-                      onRead: () => _readSensor(viewModel.readGyroscope),
+                      isPreviewing: viewModel.isPreviewingGyro,
+                      onToggle: () => _toggleSensor(viewModel.toggleGyroscope),
                     ),
                     const SizedBox(height: AppDimens.s16),
                     ImagePickerField(

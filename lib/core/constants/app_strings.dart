@@ -45,6 +45,8 @@ class AppStrings {
   // Sensor reader
   static const String btnReadSensor = 'Read';
   static const String btnReadSensorAgain = 'Read again';
+  static const String btnCaptureSensor = 'Capture';
+  static const String sensorLive = 'Live';
   static const String sensorX = 'X';
   static const String sensorY = 'Y';
   static const String sensorZ = 'Z';
